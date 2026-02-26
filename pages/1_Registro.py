@@ -3,22 +3,21 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 
 # --- CONFIGURACIÓN DE CONEXIÓN ---
-DB_USER = "root"
-DB_PASSWORD = "Pass1234"
-DB_HOST = "127.0.0.1"
-DB_PORT = "3306" 
-DB_NAME = "avances_ISO"
+DB_USER = "postgres"
+DB_PASSWORD = "1234"
+DB_HOST = "localhost"
+DB_PORT = "5432" 
+DB_NAME = "avances_iso"
 
-# --- CADENA DE CONEXIÓN PARA MYSQL ---
-engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
-
+# --- CADENA DE CONEXIÓN PARA POSTGRESQL ---
+engine = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Control de Avances", layout="wide")
 st.header("📝 Registrar avances")
 
 # --- OPCIONES DE AÑO Y MES ---
-anios = [2025, 2026, 2027, 2028, 2029]
+anios = [2026, 2027, 2028, 2029]
 meses = [
     "Enero","Febrero","Marzo","Abril","Mayo","Junio",
     "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
@@ -65,23 +64,44 @@ with st.form("form_avance"):
 
     if enviado:
         try:
-            insert_query = text("""
-                INSERT INTO avances (proceso, indicador, unidad, frecuencia, meta, anio, mes, avance, comentarios)
-                VALUES (:proceso, :indicador, :unidad, :frecuencia, :meta, :anio, :mes, :avance, :comentarios)
+            # 1) validar duplicado
+            exists_query = text("""
+                SELECT 1
+                FROM avances
+                WHERE proceso = :proceso
+                AND unidad  = :unidad
+                AND anio    = :anio
+                AND mes     = :mes
+                LIMIT 1
             """)
-            with engine.connect() as conn:
-                conn.execute(insert_query, {
+
+            with engine.begin() as conn:  # begin = transacción + commit automático si todo ok
+                exists = conn.execute(exists_query, {
                     "proceso": proceso,
-                    "indicador": indicador,
                     "unidad": unidad,
-                    "frecuencia": frecuencia,
-                    "meta": meta,
                     "anio": anio,
-                    "mes": mes,
-                    "avance": avance,
-                    "comentarios": comentarios
-                })
-                conn.commit()
-            st.success("✅ Avance guardado correctamente.")
+                    "mes": mes
+                }).first()
+
+                if exists:
+                    st.warning("⚠️ Ya existe un registro con ese Proceso, Unidad, Año y Mes. No se guardó.")
+                else:
+                    insert_query = text("""
+                        INSERT INTO avances (proceso, indicador, unidad, frecuencia, meta, anio, mes, avance, comentarios)
+                        VALUES (:proceso, :indicador, :unidad, :frecuencia, :meta, :anio, :mes, :avance, :comentarios)
+                    """)
+                    conn.execute(insert_query, {
+                        "proceso": proceso,
+                        "indicador": indicador,
+                        "unidad": unidad,
+                        "frecuencia": frecuencia,
+                        "meta": meta,
+                        "anio": anio,
+                        "mes": mes,
+                        "avance": avance,
+                        "comentarios": comentarios
+                    })
+                    st.success("✅ Avance guardado correctamente.")
+
         except Exception as e:
             st.error(f"❌ Error al guardar: {e}")

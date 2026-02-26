@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # --- CONFIGURACIÓN DE CONEXIÓN ---
-DB_USER = "root"
-DB_PASSWORD = "Pass1234"
-DB_HOST = "127.0.0.1"
-DB_PORT = "3306"  # Puerto por defecto de MySQL
-DB_NAME = "avances_ISO"
+DB_USER = "postgres"
+DB_PASSWORD = "1234"
+DB_HOST = "localhost"
+DB_PORT = "5432" 
+DB_NAME = "avances_iso"
 
-# --- CADENA DE CONEXIÓN PARA MYSQL ---
-engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+# --- CADENA DE CONEXIÓN PARA POSTGRESQL ---
+engine = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 st.set_page_config(page_title="Dashboards", layout="wide")
 st.title("📊 Indicadores")

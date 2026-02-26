@@ -1,18 +1,34 @@
 import streamlit as st
 import pandas as pd
 import psycopg2
+from sqlalchemy import create_engine, text
 from psycopg2.extras import RealDictCursor
 
-#  CONEXIÓN A POSTGRESQL
+# --- CONFIGURACIÓN DE CONEXIÓN ---
+DB_USER = "postgres"
+DB_PASSWORD = "1234"
+DB_HOST = "localhost"
+DB_PORT = "5432" 
+DB_NAME = "avances_iso"
 
+# --- CADENA DE CONEXIÓN PARA POSTGRESQL ---
+engine = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+
+# --- FUNCIÓN DE CONEXIÓN (AGREGA ESTO) ---
 def get_connection():
-    return psycopg2.connect(
-        dbname="avances_iso",
-        user="postgres",
-        password="Pass1234",
-        host="localhost",
-        port="5432"
-    )
+    """Crea y retorna una conexión a PostgreSQL"""
+    try:
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD
+        )
+        return conn
+    except Exception as e:
+        st.error(f"Error conectando a la base de datos: {e}")
+        return None
 
 # Configuracion de la pagina (En el productivo se llama "3_Consulta.py")
 
@@ -163,10 +179,10 @@ if buscar:
             ">
                 <h4 style="margin:0;">📌 {r['proceso']}</h4>
                 <p><b>Indicador:</b> {r['indicador']}</p>
-                <p><b>Año:</b> {r['anio']} | <b>Mes:</b> {r['mes']}</p>
-                <p><b>Avance:</b> {r['avance']}</p>
-                <p><b>Comentarios:</b> {r['comentarios']}</p>
+                <p><b>Año:</b> {r['anio']}  |  <b>Mes:</b> {r['mes']}</p>
+                <p><b>Meta:</b> {r['meta']}  | <b>Avance:</b> {r['avance']}</p>
                 <p><b>Fecha de registro:</b> {fecha}</p>
+                <p><b>Comentarios:</b> {r['comentarios']}</p>
             </div>
             """
             st.markdown(card, unsafe_allow_html=True)
